@@ -1,0 +1,10 @@
+#!/bin/bash
+sgrep__vim_shortcut=$(sed -n "$1p" < ~/.sgrep_shortcuts)
+sgrep__line=`echo $sgrep__vim_shortcut | cut -d" " -f1`
+sgrep__file=`echo $sgrep__vim_shortcut | sed 's/'$sgrep__line' //'`
+if [ -z "$EDITOR" ]; then
+   sgrep__editor="vim"
+else
+   sgrep__editor="$EDITOR"
+fi
+$sgrep__editor +$sgrep__line "$sgrep__file"

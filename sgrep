@@ -1,0 +1,47 @@
+#!/usr/bin/python3
+
+import os
+import re
+import subprocess
+import sys
+
+HOME          = os.path.expanduser('~')
+SHORTCUT_FILE = f"{HOME}/.sgrep_shortcuts"
+
+pattern = re.compile(r'\033\[[;0-9]*[mK]')
+
+def colourstrip(data):
+    return pattern.sub("", data)
+
+def processLine(line):
+    field = line.split(':')
+
+    return colourstrip(field[1]), \
+        f"{os.getcwd()}/{colourstrip(field[0])}"
+
+if __name__ == "__main__":
+    r, w = os.pipe()
+    r, w = os.fdopen(r, 'r', 1024), os.fdopen(w, 'w', 1024)
+
+    if os.fork():
+        w.close()
+
+        i = 1
+        with open(SHORTCUT_FILE, "w") as scFile:
+            while True:
+                line = r.readline()
+
+                if not line: break
+
+                ln, filename = processLine(line)
+                sys.stdout.write(f"\033[0;31m[{i}]\033[0m:{line}")
+
+                scFile.write(f"{ln} {filename}\n")
+
+                i += 1
+
+    else:
+        r.close()
+
+        subprocess.run(["unbuffer", "grep", "--color", "-nr"] + sys.argv[1:], stdout=w)
+
